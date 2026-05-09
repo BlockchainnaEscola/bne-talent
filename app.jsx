@@ -905,16 +905,76 @@ function Profile({ profile, onBack, onEdit, isOwn }) {
         </header>
 
         <nav className="prof-tabs mono">
-          {[{ id: "overview", l: "Overview" }, { id: "skills", l: "Skills · Validações" }, { id: "onchain", l: "Atividade on-chain" }].map((t) => (
+          {[{ id: "overview", l: "Overview" }, { id: "passport", l: "Passaporte" }, { id: "skills", l: "Skills · Validações" }, { id: "onchain", l: "Atividade on-chain" }].map((t) => (
             <button key={t.id} className={`pt ${tab === t.id ? "on" : ""}`} onClick={() => setTab(t.id)}>{t.l}</button>
           ))}
         </nav>
 
         {tab === "overview" && <OverviewTab profile={profile} onInvite={() => setShowInvite(true)} />}
+        {tab === "passport" && <PassportTab profile={profile} isOwn={isOwn} />}
         {tab === "skills" && <SkillsTab profile={profile} />}
         {tab === "onchain" && <OnchainTab profile={profile} />}
       </div>
       <Footer />
+    </div>
+  );
+}
+
+const PASSPORT_BADGES = [
+  { id: 0, label: "Perfil Criado",      icon: "◈", desc: "Cadastrou no BnE Talent Hub",          color: "var(--c-orange)",  check: (p) => !!p.name },
+  { id: 1, label: "GitHub Conectado",   icon: "⌥", desc: "Adicionou GitHub ao perfil",           color: "var(--c-cyan)",    check: (p) => !!p.github },
+  { id: 2, label: "Twitter Conectado",  icon: "◎", desc: "Adicionou Twitter ao perfil",          color: "var(--c-magenta)", check: (p) => !!p.twitter },
+  { id: 3, label: "Skills Declaradas",  icon: "◐", desc: "Declarou pelo menos 1 skill",          color: "var(--c-yellow)",  check: (p) => p.skills?.length > 0 },
+  { id: 4, label: "Trilha Concluída",   icon: "▲", desc: "Completou pelo menos 1 trilha",        color: "var(--c-orange)",  check: (p) => p.tracks?.length > 0 },
+  { id: 5, label: "MiniPay Ativo",      icon: "⬡", desc: "Acessou via MiniPay wallet",           color: "var(--c-cyan)",    check: (p) => !!p.isMiniPay },
+  { id: 6, label: "Primeiro Token",     icon: "◆", desc: "Fez deploy de token na Celo",          color: "var(--c-magenta)", check: () => false },
+  { id: 7, label: "Primeiro NFT",       icon: "✦", desc: "Fez deploy de NFT na Celo",            color: "var(--c-yellow)",  check: () => false },
+  { id: 8, label: "Balaio Task",        icon: "⊕", desc: "Completou uma task no Balaio",         color: "var(--c-orange)",  check: () => false },
+  { id: 9, label: "Proof of Ship",      icon: "⛵", desc: "Submeteu projeto na competição Celo",  color: "var(--c-cyan)",    check: () => false },
+];
+
+function PassportTab({ profile, isOwn }) {
+  const unlocked = PASSPORT_BADGES.filter(b => b.check(profile)).length;
+  return (
+    <div style={{ padding: "32px 0" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 24 }}>
+        <span style={{ fontFamily: "Bebas Neue", fontSize: 32, letterSpacing: "0.04em" }}>PASSAPORTE WEB3</span>
+        <span className="mono" style={{ fontSize: 12, color: "var(--c-muted)" }}>{unlocked}/{PASSPORT_BADGES.length} DESBLOQUEADOS</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+        {PASSPORT_BADGES.map(b => {
+          const done = b.check(profile);
+          return (
+            <div key={b.id} style={{
+              position: "relative", border: `1px solid ${done ? b.color : "var(--c-bg-3)"}`,
+              borderRadius: 4, padding: "20px 16px", background: done ? `color-mix(in srgb, ${b.color} 8%, var(--c-bg-2))` : "var(--c-bg-2)",
+              opacity: done ? 1 : 0.5, transition: "opacity 0.2s"
+            }}>
+              <CornerTicks color={done ? b.color : "var(--c-bg-3)"} />
+              <div style={{ fontSize: 28, color: done ? b.color : "var(--c-muted)", marginBottom: 8, filter: done ? "none" : "grayscale(1)" }}>
+                {b.icon}
+              </div>
+              <div style={{ fontFamily: "Bebas Neue", fontSize: 18, letterSpacing: "0.04em", color: done ? "var(--c-fg)" : "var(--c-muted)", marginBottom: 4 }}>
+                {b.label}
+              </div>
+              <div className="mono" style={{ fontSize: 10, color: "var(--c-muted)", lineHeight: 1.4 }}>
+                {b.desc}
+              </div>
+              {done && (
+                <div className="mono" style={{ marginTop: 10, fontSize: 10, color: b.color }}>✓ DESBLOQUEADO</div>
+              )}
+              {!done && isOwn && (
+                <div className="mono" style={{ marginTop: 10, fontSize: 10, color: "var(--c-muted)" }}>◌ BLOQUEADO</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {isOwn && (
+        <p className="mono" style={{ marginTop: 24, fontSize: 11, color: "var(--c-muted)", textAlign: "center" }}>
+          Complete seu perfil para desbloquear mais badges · Emissão onchain em breve
+        </p>
+      )}
     </div>
   );
 }
