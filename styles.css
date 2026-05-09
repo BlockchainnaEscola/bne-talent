@@ -1132,9 +1132,15 @@ code { font-family: "JetBrains Mono", monospace; background: var(--c-bg-3); padd
   }
   .hud-c { display: none; }
   .hud-l b, .hud-l .hud-sep:first-of-type { display: none; }
-  .hud-logo { width: 28px; height: 28px; }
+  .hud-logo { width: 28px !important; height: 28px !important; }
   .hud-r { font-size: 10px; gap: 6px; }
   .hud-r .hud-sep { display: none; }
+
+  /* PORTRAIT TAGS — ocultar no mobile */
+  .portrait-tag { display: none; }
+
+  /* EYEBROW no hero — simplificar */
+  .hero-title-col .eyebrow { display: none; }
 
   /* HERO */
   .hero { padding: 0; }
