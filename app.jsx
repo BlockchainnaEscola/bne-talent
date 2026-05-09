@@ -1,5 +1,6 @@
-// Blockchain na Escola — Talent Hub prototype
+// Blockchain na Escola — Talent Hub
 // Three-screen flow: Landing → Cadastro → Perfil
+// Integrations: MiniPay/MetaMask wallet + Vercel Function /api/submit
 
 const { useState, useEffect, useRef, useMemo } = React;
 
@@ -138,10 +139,13 @@ function Marquee({ items, speed = 60, color = "var(--c-fg)" }) {
 
 }
 
-function HUDBar({ screen, onScreen }) {
+function HUDBar({ screen, onScreen, walletAddress }) {
   const [t, setT] = useState(new Date());
   useEffect(() => {const i = setInterval(() => setT(new Date()), 1000);return () => clearInterval(i);}, []);
   const time = t.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const shortAddr = walletAddress
+    ? walletAddress.slice(0, 6) + "…" + walletAddress.slice(-4)
+    : null;
   return (
     <div className="hud">
       <div className="hud-l">
@@ -158,6 +162,8 @@ function HUDBar({ screen, onScreen }) {
       <div className="hud-r">
         <span>NET: CELO</span>
         <span className="hud-sep">·</span>
+        {shortAddr && <span className="mono" style={{ color: "var(--c-cyan)", fontSize: "11px" }}>{shortAddr}</span>}
+        {shortAddr && <span className="hud-sep">·</span>}
         <span>{time}</span>
       </div>
     </div>);
@@ -321,7 +327,7 @@ function Landing({ onRegister, onView, palette }) {
             Prova invisível pra invisíveis.
           </p>
           <div className="man-sig">
-            <span>— Bridging Latin America’s next generation to Web3</span>
+            <span>— Bridging Latin America's next generation to Web3</span>
             <span className="man-org">Chapter do Talent Program · BR · desde 2020</span>
           </div>
         </Reveal>
@@ -345,20 +351,16 @@ function CollageSlot({ label, tone = "warm", img }) {
       {img && <div className="collage-photo" style={{ backgroundImage: `url('${img}')` }}></div>}
       <div className="collage-silhouette" aria-hidden>
         <svg viewBox="0 0 200 280" preserveAspectRatio="xMidYMax meet">
-          {/* abstract head + shoulders silhouette */}
           <defs>
             <pattern id="dots" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
               <circle cx="3" cy="3" r="1.2" fill="#fff" opacity="0.8" />
             </pattern>
           </defs>
           <path d="M100 20 C 60 20, 50 70, 60 100 L 60 130 C 30 140, 10 180, 10 280 L 190 280 C 190 180, 170 140, 140 130 L 140 100 C 150 70, 140 20, 100 20 Z" fill="#0a0606" />
-          {/* VR / glasses bar */}
           <rect x="48" y="78" width="104" height="22" rx="3" fill="var(--c-cyan)" opacity="0.92" />
           <rect x="50" y="80" width="44" height="18" rx="2" fill="#0a0606" />
           <rect x="106" y="80" width="44" height="18" rx="2" fill="#0a0606" />
-          {/* dots head pattern */}
           <ellipse cx="100" cy="55" rx="40" ry="38" fill="url(#dots)" opacity="0.35" />
-          {/* chain */}
           <path d="M75 145 Q100 165 125 145" stroke="var(--c-yellow)" strokeWidth="3" fill="none" />
           <circle cx="100" cy="160" r="5" fill="var(--c-yellow)" />
         </svg>
@@ -436,17 +438,72 @@ function Register({ onComplete, onBack, palette }) {
     wallet: "", cohort: "", skills: [], tracks: []
   });
   const [walletConnecting, setWalletConnecting] = useState(false);
+  const [isMiniPay, setIsMiniPay] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
   const update = (k, v) => setData((d) => ({ ...d, [k]: v }));
   const toggle = (k, v) =>
   setData((d) => ({ ...d, [k]: d[k].includes(v) ? d[k].filter((x) => x !== v) : [...d[k], v] }));
 
-  const connectWallet = () => {
+  // ── MiniPay / MetaMask wallet connection ──
+  const connectWallet = async () => {
     setWalletConnecting(true);
-    setTimeout(() => {
-      update("wallet", "0x" + Math.random().toString(16).slice(2, 10) + "...4F7Ae4666FF6");
+    try {
+      if (typeof window.ethereum !== "undefined") {
+        const miniPay = window.ethereum.isMiniPay === true;
+        setIsMiniPay(miniPay);
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        if (accounts && accounts[0]) {
+          update("wallet", accounts[0]);
+        }
+      } else {
+        alert("Nenhuma carteira detectada. Abra no MiniPay ou instale MetaMask.");
+      }
+    } catch (err) {
+      console.error("Wallet connection error:", err);
+      alert("Erro ao conectar carteira. Tente novamente.");
+    } finally {
       setWalletConnecting(false);
-    }, 1400);
+    }
+  };
+
+  // Auto-connect if MiniPay is detected on load
+  useEffect(() => {
+    if (typeof window.ethereum !== "undefined" && window.ethereum.isMiniPay) {
+      connectWallet();
+    }
+  }, []);
+
+  // ── Submit: GitHub commit + registerBuilder ──
+  const handlePublish = async () => {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch("/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.name,
+          bio: data.bio,
+          location: data.location,
+          github: data.github,
+          wallet: data.wallet,
+          cohort: data.cohort,
+          skills: data.skills,
+          tracks: data.tracks,
+          isMiniPay
+        })
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Erro no servidor");
+      onComplete(data);
+    } catch (err) {
+      console.error("Submit error:", err);
+      setSubmitError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const steps = ["Identidade", "Carteira", "Skills", "Trilhas", "Confirmar"];
@@ -549,7 +606,7 @@ function Register({ onComplete, onBack, palette }) {
                   <button className="wallet-pill" onClick={connectWallet}>
                     <span className="wp-glyph">◈</span>
                     <span className="wp-l">
-                      <b>WalletConnect</b>
+                      <b>WalletConnect / MetaMask</b>
                       <small>Metamask, Rainbow, etc.</small>
                     </span>
                   </button>
@@ -568,12 +625,15 @@ function Register({ onComplete, onBack, palette }) {
                       <span className="mono">{data.wallet}</span>
                     </div>
                     <div className="wp-row">
-                      <span className="mono small muted">SCAN ON-CHAIN</span>
-                      <span className="mono"><span className="dot dot-cyan"></span> 12 tx · 1 NFT badge · Celo Mainnet</span>
+                      <span className="mono small muted">TIPO</span>
+                      <span className="mono">
+                        <span className="dot dot-cyan"></span>
+                        {isMiniPay ? " MiniPay detectado" : " Carteira externa"}
+                      </span>
                     </div>
                     <div className="wp-row">
-                      <span className="mono small muted">BADGE BNE</span>
-                      <span className="mono">BNE-1761151541471 · #7</span>
+                      <span className="mono small muted">REDE</span>
+                      <span className="mono">Celo Mainnet</span>
                     </div>
                   </div>
               }
@@ -630,7 +690,7 @@ function Register({ onComplete, onBack, palette }) {
             {step === 4 &&
             <StepFrame title="Confere e publica" tag="05·CONFIRMAR">
                 <p className="step-frame-lede">
-                  Revisa. Quando você publica, gera um arquivo no repo e dispara as validações.
+                  Revisa. Quando você publica, gera um arquivo no repo e registra on-chain.
                 </p>
                 <div className="review">
                   <ReviewRow l="Nome" v={data.name || "—"} />
@@ -646,9 +706,14 @@ function Register({ onComplete, onBack, palette }) {
                   <CornerTicks color="var(--c-yellow)" />
                   <div className="pub-l">
                     <Stamp color="var(--c-yellow)" rotate={-4}>PRONTO PRA ON-CHAIN</Stamp>
-                    <p>Vai gerar <code>builders/{(data.wallet || "0x000").slice(0, 12).toLowerCase()}.md</code> no repo público e enfileirar atestados dos parceiros.</p>
+                    <p>Vai gerar <code>builders/{(data.wallet || "0x000").slice(0, 12).toLowerCase()}.md</code> no repo público e registrar on-chain na Celo Mainnet.</p>
                   </div>
                 </div>
+                {submitError &&
+                <div style={{ marginTop: 12, color: "var(--c-blood)", fontFamily: "JetBrains Mono", fontSize: 13 }}>
+                  ⚠ {submitError}
+                </div>
+                }
               </StepFrame>
             }
 
@@ -664,8 +729,9 @@ function Register({ onComplete, onBack, palette }) {
                 </button> :
 
               <button className="btn btn-primary"
-              onClick={() => onComplete(data)}>
-                  Publicar perfil <ArrowGlyph />
+              disabled={submitting || !data.wallet}
+              onClick={handlePublish}>
+                  {submitting ? "Publicando…" : "Publicar perfil"} <ArrowGlyph />
                 </button>
               }
             </div>
@@ -994,7 +1060,7 @@ function Footer() {
           <ul>
             <li>↗ github.com/BlockchainnaEscola</li>
             <li>↗ blockchain-na-escola.gitbook.io</li>
-            <li>↗ bne.lovable.app</li>
+            <li>↗ bne-talent.vercel.app</li>
           </ul>
         </div>
         <div>
@@ -1008,7 +1074,7 @@ function Footer() {
         </div>
       </div>
       <div className="ftr-foot mono">
-        <span>BNE//TALENT_HUB v0.3 · BH→SSA→SP · 2026</span>
+        <span>BNE//TALENT_HUB v0.4 · BH→SSA→SP · 2026</span>
         <span>Built by kids da quebrada · Open source · MIT</span>
       </div>
     </footer>);
@@ -1028,19 +1094,18 @@ function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const [screen, setScreenState] = useState(t.screen);
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
+  const [walletAddress, setWalletAddress] = useState(null);
 
-  // sync screen with tweak
   useEffect(() => {setScreenState(t.screen);}, [t.screen]);
   const setScreen = (s) => {setScreenState(s);setTweak("screen", s);};
 
-  // palette
   useEffect(() => {
     document.documentElement.dataset.palette = t.palette;
     document.documentElement.dataset.scanlines = t.showScanlines ? "on" : "off";
   }, [t.palette, t.showScanlines]);
 
   const handleComplete = (data) => {
-    // merge submitted data with placeholder validations/badges
+    if (data.wallet) setWalletAddress(data.wallet);
     setProfile((p) => ({
       ...p,
       ...data,
@@ -1058,7 +1123,7 @@ function App() {
 
   return (
     <div className="app" data-screen-label={screen}>
-      <HUDBar screen={screen} onScreen={setScreen} />
+      <HUDBar screen={screen} onScreen={setScreen} walletAddress={walletAddress} />
       {screen === "landing" && <Landing onRegister={() => setScreen("register")} onView={() => setScreen("profile")} />}
       {screen === "register" && <Register onComplete={handleComplete} onBack={() => setScreen("landing")} />}
       {screen === "profile" && <Profile profile={profile} onBack={() => setScreen("landing")} onEdit={() => setScreen("register")} />}
