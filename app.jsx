@@ -223,7 +223,46 @@ function CollageSlot({ label, tone = "warm", img }) {
 
 // ─── HUD BAR ─────────────────────────────────────────────────────────────────
 
-function HUDBar({ screen, walletAddress, hasProfile, onMyProfile, onConnect }) {
+function WalletMenu({ shortAddr, hasProfile, onMyProfile, onDisconnect }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div style={{ position: "relative" }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        background: "var(--c-bg-2)", border: "1px solid var(--c-cyan)", borderRadius: 3,
+        padding: "6px 14px", color: "var(--c-cyan)", fontFamily: "JetBrains Mono",
+        fontSize: 12, cursor: "pointer", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: 6
+      }}>
+        ⬡ {shortAddr} {open ? "▲" : "▼"}
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", right: 0, top: "calc(100% + 6px)", background: "var(--c-bg-2)",
+          border: "1px solid var(--c-cyan)", borderRadius: 3, minWidth: 160, zIndex: 9999,
+          display: "flex", flexDirection: "column", overflow: "hidden"
+        }}>
+          {hasProfile && (
+            <button onClick={() => { setOpen(false); onMyProfile(); }} style={{
+              background: "none", border: "none", borderBottom: "1px solid var(--c-bg-3)",
+              padding: "10px 16px", color: "var(--c-cyan)", fontFamily: "JetBrains Mono",
+              fontSize: 12, cursor: "pointer", textAlign: "left"
+            }}>
+              → MEU PERFIL
+            </button>
+          )}
+          <button onClick={() => { setOpen(false); onDisconnect(); }} style={{
+            background: "none", border: "none", padding: "10px 16px",
+            color: "var(--c-blood)", fontFamily: "JetBrains Mono",
+            fontSize: 12, cursor: "pointer", textAlign: "left"
+          }}>
+            ✕ DESCONECTAR
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HUDBar({ screen, walletAddress, hasProfile, onMyProfile, onConnect, onDisconnect }) {
   const [t, setT] = useState(new Date());
   useEffect(() => { const i = setInterval(() => setT(new Date()), 1000); return () => clearInterval(i); }, []);
   const time = t.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -245,16 +284,14 @@ function HUDBar({ screen, walletAddress, hasProfile, onMyProfile, onConnect }) {
         <span>NET: CELO</span>
         <span className="hud-sep">·</span>
         {shortAddr ? (
-          hasProfile ? (
-            <button onClick={onMyProfile} style={{ background: "none", border: "1px solid var(--c-cyan)", borderRadius: 3, padding: "2px 10px", color: "var(--c-cyan)", fontFamily: "JetBrains Mono", fontSize: 11, cursor: "pointer" }}>
-              {shortAddr} · MEU PERFIL
-            </button>
-          ) : (
-            <span className="mono" style={{ color: "var(--c-cyan)", fontSize: 11 }}>{shortAddr}</span>
-          )
+          <WalletMenu shortAddr={shortAddr} hasProfile={hasProfile} onMyProfile={onMyProfile} onDisconnect={onDisconnect} />
         ) : (
-          <button onClick={onConnect} style={{ background: "none", border: "1px solid var(--c-muted)", borderRadius: 3, padding: "2px 10px", color: "var(--c-muted)", fontFamily: "JetBrains Mono", fontSize: 11, cursor: "pointer" }}>
-            CONECTAR CARTEIRA
+          <button onClick={onConnect} style={{
+            background: "var(--c-orange)", border: "none", borderRadius: 3,
+            padding: "6px 16px", color: "#000", fontFamily: "JetBrains Mono",
+            fontSize: 12, fontWeight: 700, cursor: "pointer", letterSpacing: "0.05em"
+          }}>
+            ⬡ CONECTAR CARTEIRA
           </button>
         )}
         <span className="hud-sep">·</span>
@@ -391,7 +428,7 @@ function Landing({ onRegister, onViewBuilders }) {
           ))}
         </Reveal>
         <div style={{ textAlign: "center", marginTop: 32 }}>
-          <button className="btn btn-ghost" onClick={onViewBuilders}>Ver todos os builders reais →</button>
+          <button className="btn btn-ghost" onClick={onViewBuilders}>Ver perfil dos builders →</button>
         </div>
       </section>
 
@@ -1060,6 +1097,11 @@ function App() {
 
   const hasProfile = !!(walletAddress && builders.find(b => b.wallet.toLowerCase() === walletAddress.toLowerCase()));
   const currentProfile = selectedBuilder || profile;
+  const disconnectWallet = () => {
+    setWalletAddress(null);
+    setProfile(null);
+  };
+
   const isOwn = currentProfile && walletAddress && currentProfile.wallet.toLowerCase() === walletAddress.toLowerCase();
 
   return (
@@ -1070,6 +1112,7 @@ function App() {
         hasProfile={hasProfile}
         onMyProfile={() => { setSelectedBuilder(null); setScreen("profile"); }}
         onConnect={connectWallet}
+        onDisconnect={disconnectWallet}
       />
 
       {screen === "landing" && (
