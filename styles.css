@@ -221,8 +221,8 @@ code { font-family: "JetBrains Mono", monospace; background: var(--c-bg-3); padd
 }
 .hero-bg {
   position: absolute; inset: 0; z-index: 0;
-  background: url('assets/art-02.png') 70% center/cover no-repeat;
-  filter: saturate(1.05);
+  background: url('assets/hero-city.png') center center/cover no-repeat;
+  filter: saturate(1.1) brightness(0.85);
   transform: scale(1.06);
   animation: heroDrift 24s ease-in-out infinite alternate;
 }
@@ -233,18 +233,18 @@ code { font-family: "JetBrains Mono", monospace; background: var(--c-bg-3); padd
 .hero-bg::after {
   content: ""; position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse at 80% 50%, rgba(255,90,31,.12), transparent 60%),
-    radial-gradient(ellipse at 0% 100%, rgba(255,30,138,.22), transparent 55%),
-    linear-gradient(105deg, rgba(10,8,8,.94) 0%, rgba(10,8,8,.7) 42%, rgba(10,8,8,.25) 75%, rgba(10,8,8,.55) 100%);
+    radial-gradient(ellipse at 80% 50%, rgba(255,90,31,.10), transparent 60%),
+    radial-gradient(ellipse at 0% 100%, rgba(180,30,255,.18), transparent 55%),
+    linear-gradient(105deg, rgba(10,8,8,.95) 0%, rgba(10,8,8,.65) 42%, rgba(10,8,8,.20) 75%, rgba(10,8,8,.60) 100%);
 }
 .hero-bg::before {
   content: ""; position: absolute; inset: 0;
   background-image: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,0.18) 2px 3px);
   mix-blend-mode: multiply; opacity: .55;
 }
-[data-palette="neon"] .hero-bg { background-image: url('assets/art-04.png'); }
-[data-palette="mono"] .hero-bg { background-image: url('assets/art-03.png'); filter: saturate(0.4) contrast(1.1); }
-[data-palette="dia"]  .hero-bg { background-image: url('assets/art-06.png'); filter: saturate(1.1) brightness(1.05); }
+[data-palette="neon"] .hero-bg { background-image: url('assets/hero-city.png'); }
+[data-palette="mono"] .hero-bg { background-image: url('assets/hero-city.png'); filter: saturate(0.2) contrast(1.1); }
+[data-palette="dia"]  .hero-bg { background-image: url('assets/hero-city.png'); filter: saturate(1.1) brightness(1.05); }
 [data-palette="dia"]  .hero-bg::after {
   background:
     radial-gradient(ellipse at 50% 60%, rgba(255,210,63,.15), transparent 55%),
