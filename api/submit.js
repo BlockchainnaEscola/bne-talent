@@ -16,6 +16,11 @@ export default async function handler(req, res) {
   const GITHUB_OWNER = process.env.GITHUB_OWNER || "BlockchainnaEscola";
   const GITHUB_REPO  = process.env.GITHUB_REPO  || "Talent-Program";
 
+  // DEBUG — remover depois de confirmar que está funcionando
+  console.log("TOKEN:", GITHUB_TOKEN ? GITHUB_TOKEN.slice(0, 8) + "..." : "UNDEFINED");
+  console.log("OWNER:", GITHUB_OWNER);
+  console.log("REPO:", GITHUB_REPO);
+
   const filePath = `builders/${wallet.toLowerCase()}.md`;
   const fileContent = `# ${name}
 
@@ -77,6 +82,7 @@ ${tracks && tracks.length ? tracks.map((t) => `- ${t}`).join("\n") : "—"}
 
     if (!commitRes.ok) {
       const err = await commitRes.json();
+      console.log("GitHub PUT error:", JSON.stringify(err));
       throw new Error(err.message || "GitHub API error");
     }
 
