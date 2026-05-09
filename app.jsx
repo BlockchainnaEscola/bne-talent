@@ -834,7 +834,7 @@ function ReviewRow({ l, v, mono }) {
 
 // ─── SCREEN: PROFILE ─────────────────────────────────────────────────────────
 
-function Profile({ profile, onBack, onEdit, isOwn }) {
+function Profile({ profile, onBack, onEdit, isOwn, walletAddress }) {
   const [tab, setTab] = useState("overview");
   const [copied, setCopied] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
@@ -1258,7 +1258,7 @@ function App() {
         <Register onComplete={(data) => { setProfile(data); setSelectedBuilder(null); setScreen("profile"); }} onBack={() => setScreen("landing")} initialData={editData} />
       )}
       {screen === "profile" && currentProfile && (
-        <Profile profile={currentProfile} onBack={() => setScreen("builders")} onEdit={() => { setEditData(currentProfile); setScreen("register"); }} isOwn={isOwn} />
+        <Profile profile={currentProfile} onBack={() => setScreen("builders")} onEdit={() => { setEditData(currentProfile); setScreen("register"); }} isOwn={isOwn} walletAddress={walletAddress} />
       )}
       {screen === "profile" && !currentProfile && (
         <div style={{ padding: 80, textAlign: "center" }}>
