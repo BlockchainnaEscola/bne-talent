@@ -1,5 +1,5 @@
 // api/submit.js — Vercel Serverless Function
-// GitHub commit + issueBadge no contrato BnETalentHub (Celo Mainnet)
+// GitHub commit + registerBuilder + issueBadge (Celo Mainnet)
 
 import { ethers } from "ethers";
 
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   const CONTRACT_ADDRESS  = "0x5fFa930E5a068Ae68c9e3f0fB80dEB8eb88B058D";
   const RPC_URL           = "https://forno.celo.org";
 
-  const results = { github: null, badge: null };
+  const results = { github: null, register: null, badge: null };
 
   // ── 1. COMMIT NO TALENT-PROGRAM ──────────────────────────────────────────
   try {
@@ -88,27 +88,39 @@ export default async function handler(req, res) {
     results.github = { error: err.message };
   }
 
-  // ── 2. MINT BADGE — issueBadge(address, badgeType=0, note) ───────────────
+  // ── 2. CONTRATO — registerBuilder + issueBadge ───────────────────────────
   try {
     if (!ADMIN_PRIVATE_KEY) throw new Error("ADMIN_PRIVATE_KEY not set");
 
     const ABI = [
-      "function issueBadge(address builder, uint8 badgeType, string calldata note) external"
+      "function registerBuilder(string calldata name, string calldata location, string calldata github, string calldata cohort) external",
+      "function issueBadge(address builder, uint8 badgeType, string calldata note) external",
+      "function hasBadge(address builder, uint8 badgeType) view returns (bool)"
     ];
 
     const provider = new ethers.JsonRpcProvider(RPC_URL);
     const adminWallet = new ethers.Wallet(ADMIN_PRIVATE_KEY, provider);
     const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, adminWallet);
 
-    const note = `BnE Talent Hub · ${cohort || "Web3 101"} · ${new Date().toISOString().split("T")[0]}`;
-    const tx = await contract.issueBadge(wallet, 0, note);
-    await tx.wait();
+    // registerBuilder — qualquer um pode chamar, admin paga o gas
+    const txReg = await contract.registerBuilder(
+      name,
+      location || "",
+      github || "",
+      cohort || ""
+    );
+    await txReg.wait();
+    results.register = { ok: true, txHash: txReg.hash };
 
-    results.badge = { ok: true, txHash: tx.hash };
+    // issueBadge — badge tipo 0 = Web3 101
+    const note = `BnE Talent Hub · ${cohort || "Web3 101"} · ${new Date().toISOString().split("T")[0]}`;
+    const txBadge = await contract.issueBadge(wallet, 0, note);
+    await txBadge.wait();
+    results.badge = { ok: true, txHash: txBadge.hash };
+
   } catch (err) {
-    console.error("Badge mint error:", err.message);
+    console.error("Contract error:", err.message);
     results.badge = { error: err.message };
-    // Não falha o submit — commit GitHub já foi feito
   }
 
   return res.status(200).json({ ok: true, results });
