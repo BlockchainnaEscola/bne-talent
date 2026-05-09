@@ -1,8 +1,8 @@
-// Blockchain na Escola — Talent Hub v0.5
+// Blockchain na Escola — Talent Hub v0.6
 // Landing → Cadastro → Perfil
 // Integrações: MiniPay/MetaMask, GitHub API (listagem real), Vercel Function /api/submit
 
-const { useState, useEffect, useRef, useCallback } = React;
+const { useState, useEffect, useRef } = React;
 
 const GITHUB_OWNER = "BlockchainnaEscola";
 const GITHUB_REPO  = "Talent-Program";
@@ -18,20 +18,39 @@ const COHORTS = [
 ];
 
 const SKILLS = [
-  { id: "solidity",     label: "Solidity",          tag: "DEV"   },
-  { id: "typescript",   label: "TypeScript",         tag: "DEV"   },
-  { id: "react",        label: "React",              tag: "DEV"   },
-  { id: "viem",         label: "viem",               tag: "DEV"   },
-  { id: "wagmi",        label: "wagmi",              tag: "DEV"   },
-  { id: "foundry",      label: "Foundry",            tag: "DEV"   },
-  { id: "python",       label: "Python",             tag: "DEV"   },
-  { id: "rust",         label: "Rust",               tag: "DEV"   },
-  { id: "figma",        label: "Figma",              tag: "DESIGN"},
-  { id: "defi",         label: "DeFi",               tag: "FIN"   },
-  { id: "minipay",      label: "MiniPay",            tag: "PAY"   },
-  { id: "nfts",         label: "NFTs",               tag: "ARTE"  },
-  { id: "dao",          label: "DAOs",               tag: "GOV"   },
-  { id: "onchain-data", label: "On-chain Data",      tag: "DATA"  }
+  // DEV
+  { id: "solidity",     label: "Solidity",           tag: "DEV"       },
+  { id: "typescript",   label: "TypeScript",          tag: "DEV"       },
+  { id: "react",        label: "React",               tag: "DEV"       },
+  { id: "python",       label: "Python",              tag: "DEV"       },
+  { id: "rust",         label: "Rust",                tag: "DEV"       },
+  { id: "viem",         label: "viem",                tag: "DEV"       },
+  { id: "wagmi",        label: "wagmi",               tag: "DEV"       },
+  { id: "foundry",      label: "Foundry",             tag: "DEV"       },
+  // WEB3
+  { id: "defi",         label: "DeFi",                tag: "WEB3"      },
+  { id: "nfts",         label: "NFTs",                tag: "WEB3"      },
+  { id: "dao",          label: "DAOs",                tag: "WEB3"      },
+  { id: "minipay",      label: "MiniPay",             tag: "WEB3"      },
+  { id: "onchain-data", label: "On-chain Data",       tag: "WEB3"      },
+  { id: "tokeneng",     label: "Token Engineering",   tag: "WEB3"      },
+  // DESIGN
+  { id: "figma",        label: "Figma",               tag: "DESIGN"    },
+  { id: "uiux",         label: "UI/UX Design",        tag: "DESIGN"    },
+  { id: "motion",       label: "Motion & Vídeo",      tag: "DESIGN"    },
+  { id: "ilustracao",   label: "Ilustração",          tag: "DESIGN"    },
+  { id: "socialmedia",  label: "Social Media",        tag: "DESIGN"    },
+  // COMUNIDADE
+  { id: "community",    label: "Community Manager",   tag: "COMUNIDADE"},
+  { id: "educacao",     label: "Educação",            tag: "COMUNIDADE"},
+  { id: "conteudo",     label: "Escrita & Conteúdo",  tag: "COMUNIDADE"},
+  { id: "gestao",       label: "Gestão de Projetos",  tag: "COMUNIDADE"},
+  { id: "politica",     label: "Política Digital",    tag: "COMUNIDADE"},
+  // NEGÓCIOS
+  { id: "marketing",    label: "Marketing Web3",      tag: "NEGÓCIOS"  },
+  { id: "vendas",       label: "Vendas",              tag: "NEGÓCIOS"  },
+  { id: "financeiro",   label: "Financeiro",          tag: "NEGÓCIOS"  },
+  { id: "juridico",     label: "Jurídico & Compliance",tag: "NEGÓCIOS" },
 ];
 
 const TRACKS = [
@@ -44,16 +63,25 @@ const TRACKS = [
 ];
 
 const PARTNERS = [
-  { id: "celo",    name: "Celo Foundation",  role: "Sponsor",    color: "var(--c-yellow)"  },
-  { id: "ava",     name: "Team1 Avalanche",  role: "Sponsor",    color: "var(--c-magenta)" },
-  { id: "ocb",     name: "Off-Chain Brazil", role: "Validator",  color: "var(--c-cyan)"    },
-  { id: "modular", name: "Modular Crypto",   role: "Validator",  color: "var(--c-orange)"  },
-  { id: "rastas",  name: "Crypto Rastas",    role: "Community",  color: "var(--c-yellow)"  },
-  { id: "lcc",     name: "Let's Co Create",  role: "Community",  color: "var(--c-magenta)" },
-  { id: "zec",     name: "Zcash Brazil",     role: "Validator",  color: "var(--c-cyan)"    }
+  { id: "celo",    name: "Celo Foundation",  role: "Sponsor",   color: "var(--c-yellow)"  },
+  { id: "ava",     name: "Team1 Avalanche",  role: "Sponsor",   color: "var(--c-magenta)" },
+  { id: "ocb",     name: "Off-Chain Brazil", role: "Validator", color: "var(--c-cyan)"    },
+  { id: "modular", name: "Modular Crypto",   role: "Validator", color: "var(--c-orange)"  },
+  { id: "rastas",  name: "Crypto Rastas",    role: "Community", color: "var(--c-yellow)"  },
+  { id: "lcc",     name: "Let's Co Create",  role: "Community", color: "var(--c-magenta)" },
+  { id: "zec",     name: "Zcash Brazil",     role: "Validator", color: "var(--c-cyan)"    }
 ];
 
-// ─── HELPERS — parse markdown do builder ─────────────────────────────────────
+const MOCK_BUILDERS = [
+  { name: "Pedro Augusto",  cohort: "Seabra · BA · #4",     skills: ["solidity","viem"],       tone: "orange"  },
+  { name: "Maria Eduarda",  cohort: "Salvador · BA · #7",   skills: ["typescript","react"],    tone: "cyan",   featured: true },
+  { name: "Kauã Alves",     cohort: "BH · MG · #10",        skills: ["rust","defi"],           tone: "magenta" },
+  { name: "Yasmin Mello",   cohort: "Recife · PE · #11",    skills: ["figma","nfts"],          tone: "yellow"  },
+  { name: "Izabelly Lopes", cohort: "São Paulo · SP · #12", skills: ["solidity","dao"],        tone: "orange"  },
+  { name: "Lucas Gustavo",  cohort: "BH · MG · #15",        skills: ["python","onchain-data"], tone: "cyan"    }
+];
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
 
 function parseMd(md, wallet) {
   const get = (label) => {
@@ -195,7 +223,7 @@ function CollageSlot({ label, tone = "warm", img }) {
 
 // ─── HUD BAR ─────────────────────────────────────────────────────────────────
 
-function HUDBar({ screen, onScreen, walletAddress }) {
+function HUDBar({ screen, walletAddress, hasProfile, onMyProfile, onConnect }) {
   const [t, setT] = useState(new Date());
   useEffect(() => { const i = setInterval(() => setT(new Date()), 1000); return () => clearInterval(i); }, []);
   const time = t.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -213,25 +241,37 @@ function HUDBar({ screen, onScreen, walletAddress }) {
       <div className="hud-c">
         <span>5 anos · 6 estados · 27 cidades · 34k+ estudantes</span>
       </div>
-      <div className="hud-r">
+      <div className="hud-r" style={{ gap: 12 }}>
         <span>NET: CELO</span>
         <span className="hud-sep">·</span>
-        {shortAddr && <><span className="mono" style={{ color: "var(--c-cyan)", fontSize: "11px" }}>{shortAddr}</span><span className="hud-sep">·</span></>}
+        {shortAddr ? (
+          hasProfile ? (
+            <button onClick={onMyProfile} style={{ background: "none", border: "1px solid var(--c-cyan)", borderRadius: 3, padding: "2px 10px", color: "var(--c-cyan)", fontFamily: "JetBrains Mono", fontSize: 11, cursor: "pointer" }}>
+              {shortAddr} · MEU PERFIL
+            </button>
+          ) : (
+            <span className="mono" style={{ color: "var(--c-cyan)", fontSize: 11 }}>{shortAddr}</span>
+          )
+        ) : (
+          <button onClick={onConnect} style={{ background: "none", border: "1px solid var(--c-muted)", borderRadius: 3, padding: "2px 10px", color: "var(--c-muted)", fontFamily: "JetBrains Mono", fontSize: 11, cursor: "pointer" }}>
+            CONECTAR CARTEIRA
+          </button>
+        )}
+        <span className="hud-sep">·</span>
         <span>{time}</span>
       </div>
     </div>
   );
 }
 
-// ─── MODAL EMAIL CONVIDAR ─────────────────────────────────────────────────────
+// ─── MODAL INVITE ─────────────────────────────────────────────────────────────
 
 function InviteModal({ profile, onClose }) {
-  if (!profile.email) return null;
   const subject = encodeURIComponent(`Convite para projeto Web3 — via BnE Talent Hub`);
   const body = encodeURIComponent(`Olá ${profile.name},\n\nVi seu perfil no BnE Talent Hub e gostaria de conversar sobre uma oportunidade.\n\nWallet: ${profile.wallet}\nPrograma: ${profile.cohort}\n\n—`);
   const mailto = `mailto:${profile.email}?subject=${subject}&body=${body}`;
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ background: "var(--c-bg-2)", border: "1px solid var(--c-orange)", padding: 32, borderRadius: 4, maxWidth: 420, width: "90%", position: "relative" }}>
         <CornerTicks color="var(--c-orange)" />
         <h3 style={{ fontFamily: "Bebas Neue", fontSize: 28, color: "var(--c-orange)", marginBottom: 12 }}>CONVIDAR PARA PROJETO</h3>
@@ -239,9 +279,7 @@ function InviteModal({ profile, onClose }) {
           Vai abrir seu cliente de email com uma mensagem pré-preenchida para <b style={{ color: "var(--c-fg)" }}>{profile.name}</b>.
         </p>
         <div style={{ display: "flex", gap: 12 }}>
-          <a href={mailto} className="btn btn-primary" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}>
-            Abrir email <ArrowGlyph />
-          </a>
+          <a href={mailto} className="btn btn-primary" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}>Abrir email <ArrowGlyph /></a>
           <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
         </div>
       </div>
@@ -249,10 +287,51 @@ function InviteModal({ profile, onClose }) {
   );
 }
 
+// ─── TELA DE SUCESSO ──────────────────────────────────────────────────────────
+
+function SuccessScreen({ data, results, onViewProfile }) {
+  const githubUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/blob/main/builders/${data.wallet.toLowerCase()}.md`;
+  const badgeTx = results?.badge?.txHash;
+  const celoscanUrl = badgeTx ? `https://celoscan.io/tx/${badgeTx}` : null;
+  return (
+    <div className="screen landing" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 36px)" }}>
+      <Scanlines />
+      <div style={{ maxWidth: 560, width: "90%", padding: 48, background: "var(--c-bg-2)", border: "1px solid var(--c-cyan)", borderRadius: 4, position: "relative", textAlign: "center" }}>
+        <CornerTicks color="var(--c-cyan)" />
+        <div style={{ fontFamily: "Bebas Neue", fontSize: 64, color: "var(--c-cyan)", lineHeight: 1 }}>✓</div>
+        <h2 style={{ fontFamily: "Bebas Neue", fontSize: 40, letterSpacing: "0.04em", margin: "16px 0 8px" }}>PERFIL PUBLICADO!</h2>
+        <p style={{ color: "var(--c-muted)", marginBottom: 32 }}>Seu perfil está no ar e seu badge foi emitido na Celo Mainnet.</p>
+
+        <div style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
+          <div style={{ background: "var(--c-bg-3)", border: "1px solid var(--c-bg-3)", borderRadius: 3, padding: "12px 16px" }}>
+            <div className="mono" style={{ fontSize: 10, color: "var(--c-muted)", marginBottom: 4 }}>✓ COMMIT GITHUB</div>
+            <a href={githubUrl} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 12, color: "var(--c-cyan)", wordBreak: "break-all" }}>
+              builders/{data.wallet.toLowerCase()}.md ↗
+            </a>
+          </div>
+          <div style={{ background: "var(--c-bg-3)", border: "1px solid var(--c-bg-3)", borderRadius: 3, padding: "12px 16px" }}>
+            <div className="mono" style={{ fontSize: 10, color: "var(--c-muted)", marginBottom: 4 }}>✓ BADGE NFT · WEB3 101 · CELO MAINNET</div>
+            {celoscanUrl ? (
+              <a href={celoscanUrl} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 12, color: "var(--c-yellow)", wordBreak: "break-all" }}>
+                {badgeTx.slice(0, 20)}...{badgeTx.slice(-8)} ↗
+              </a>
+            ) : (
+              <span className="mono" style={{ fontSize: 12, color: "var(--c-muted)" }}>Badge pendente — será emitido em breve</span>
+            )}
+          </div>
+        </div>
+
+        <button className="btn btn-primary" onClick={onViewProfile} style={{ width: "100%" }}>
+          Ver meu perfil <ArrowGlyph />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── SCREEN: LANDING ─────────────────────────────────────────────────────────
 
-function Landing({ onRegister, onView, builders, loadingBuilders }) {
-  const tones = ["orange", "cyan", "magenta", "yellow"];
+function Landing({ onRegister, onViewBuilders }) {
   return (
     <div className="screen landing">
       <Scanlines />
@@ -278,7 +357,7 @@ function Landing({ onRegister, onView, builders, loadingBuilders }) {
             </p>
             <div className="cta-row">
               <button className="btn btn-primary" onClick={onRegister}><span>Cadastrar perfil</span><ArrowGlyph /></button>
-              <button className="btn btn-ghost" onClick={onView}>Ver perfis →</button>
+              <button className="btn btn-ghost" onClick={onViewBuilders}>Ver perfis →</button>
             </div>
             <div className="cta-meta"><span>↳ MiniPay · WalletConnect · Celo · Scroll · Avalanche</span></div>
           </div>
@@ -311,25 +390,21 @@ function Landing({ onRegister, onView, builders, loadingBuilders }) {
         </Reveal>
       </section>
 
-      {/* BUILDERS REAIS */}
+      {/* SEMPRE PERFIS FICTÍCIOS NA LANDING */}
       <section className="talents">
         <Reveal className="sec-head">
           <span className="sec-num">/02</span>
           <h2 className="sec-title">Quem tá no bloco</h2>
           <span className="sec-tag">PIPELINE_BUILDERS.JSON</span>
         </Reveal>
-        {loadingBuilders ? (
-          <p className="mono" style={{ color: "var(--c-muted)", textAlign: "center", padding: "40px 0" }}>Carregando builders...</p>
-        ) : (
-          <Reveal className="talent-grid" variant="reveal-stagger">
-            {builders.slice(0, 6).map((b, i) => (
-              <TalentCard key={b.wallet} talent={{ n: b.name, cohort: b.cohort || "BnE", skills: b.skills.slice(0, 2).map(id => SKILLS.find(s => s.id === id)?.label || id), tone: tones[i % tones.length] }} onClick={onView} />
-            ))}
-            {builders.length === 0 && (
-              <p className="mono" style={{ color: "var(--c-muted)", gridColumn: "1/-1", textAlign: "center", padding: "40px 0" }}>Nenhum builder cadastrado ainda. Seja o primeiro!</p>
-            )}
-          </Reveal>
-        )}
+        <Reveal className="talent-grid" variant="reveal-stagger">
+          {MOCK_BUILDERS.map((t, i) => (
+            <TalentCard key={i} talent={t} onClick={onViewBuilders} />
+          ))}
+        </Reveal>
+        <div style={{ textAlign: "center", marginTop: 32 }}>
+          <button className="btn btn-ghost" onClick={onViewBuilders}>Ver todos os builders reais →</button>
+        </div>
       </section>
 
       <section className="partners">
@@ -358,7 +433,6 @@ function Landing({ onRegister, onView, builders, loadingBuilders }) {
           </div>
         </Reveal>
       </section>
-
       <Footer />
     </div>
   );
@@ -389,11 +463,13 @@ function BigStat({ n, label, sub }) {
 
 function TalentCard({ talent, onClick }) {
   return (
-    <div className={`tcard ${talent.featured ? "tcard-feat" : ""}`} onClick={onClick}>
+    <div className={`tcard ${talent.featured ? "tcard-feat" : ""}`} onClick={onClick} style={{ cursor: "pointer" }}>
       <div className={`tcard-img tone-${talent.tone}`}><CollageSlot label={talent.cohort} tone={talent.tone} /></div>
       <div className="tcard-body">
-        <h4>{talent.n}</h4>
-        <div className="tcard-skills">{talent.skills.map((s) => <span key={s} className="chip">{s}</span>)}</div>
+        <h4>{talent.n || talent.name}</h4>
+        <div className="tcard-skills">
+          {talent.skills.slice(0, 2).map((s) => <span key={s} className="chip">{SKILLS.find(x => x.id === s)?.label || s}</span>)}
+        </div>
         <div className="tcard-cta mono">VER PERFIL ↗</div>
       </div>
     </div>
@@ -404,6 +480,7 @@ function TalentCard({ talent, onClick }) {
 
 function BuildersList({ builders, loading, onSelect, onBack }) {
   const [search, setSearch] = useState("");
+  const tones = ["orange", "cyan", "magenta", "yellow"];
   const filtered = builders.filter(b =>
     b.name.toLowerCase().includes(search.toLowerCase()) ||
     (b.cohort || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -425,30 +502,28 @@ function BuildersList({ builders, loading, onSelect, onBack }) {
           style={{ width: "100%", marginBottom: 24, padding: "10px 16px", background: "var(--c-bg-2)", border: "1px solid var(--c-bg-3)", color: "var(--c-fg)", fontFamily: "JetBrains Mono", fontSize: 13, borderRadius: 4 }}
         />
         {loading ? (
-          <p className="mono" style={{ color: "var(--c-muted)", textAlign: "center", padding: 40 }}>Carregando...</p>
+          <p className="mono" style={{ color: "var(--c-muted)", textAlign: "center", padding: 40 }}>Carregando builders...</p>
+        ) : filtered.length === 0 ? (
+          <p className="mono" style={{ color: "var(--c-muted)", textAlign: "center", padding: 40 }}>
+            {builders.length === 0 ? "Nenhum builder cadastrado ainda. Seja o primeiro!" : "Nenhum resultado encontrado."}
+          </p>
         ) : (
           <div className="talent-grid">
-            {filtered.map((b, i) => {
-              const tones = ["orange", "cyan", "magenta", "yellow"];
-              return (
-                <div key={b.wallet} className="tcard" onClick={() => onSelect(b)} style={{ cursor: "pointer" }}>
-                  <div className={`tcard-img tone-${tones[i % tones.length]}`}>
-                    <CollageSlot label={b.cohort || "BnE"} tone={tones[i % tones.length]} />
-                  </div>
-                  <div className="tcard-body">
-                    <h4>{b.name}</h4>
-                    <p className="mono" style={{ fontSize: 11, color: "var(--c-muted)", marginBottom: 8 }}>{b.location || b.cohort}</p>
-                    <div className="tcard-skills">
-                      {b.skills.slice(0, 3).map(id => <span key={id} className="chip">{SKILLS.find(s => s.id === id)?.label || id}</span>)}
-                    </div>
-                    <div className="tcard-cta mono">VER PERFIL ↗</div>
-                  </div>
+            {filtered.map((b, i) => (
+              <div key={b.wallet} className="tcard" onClick={() => onSelect(b)} style={{ cursor: "pointer" }}>
+                <div className={`tcard-img tone-${tones[i % tones.length]}`}>
+                  <CollageSlot label={b.cohort || "BnE"} tone={tones[i % tones.length]} />
                 </div>
-              );
-            })}
-            {filtered.length === 0 && (
-              <p className="mono" style={{ color: "var(--c-muted)", gridColumn: "1/-1", textAlign: "center", padding: 40 }}>Nenhum resultado encontrado.</p>
-            )}
+                <div className="tcard-body">
+                  <h4>{b.name}</h4>
+                  <p className="mono" style={{ fontSize: 11, color: "var(--c-muted)", marginBottom: 8 }}>{b.location || b.cohort}</p>
+                  <div className="tcard-skills">
+                    {b.skills.slice(0, 3).map(id => <span key={id} className="chip">{SKILLS.find(s => s.id === id)?.label || id}</span>)}
+                  </div>
+                  <div className="tcard-cta mono">VER PERFIL ↗</div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -469,8 +544,7 @@ function Register({ onComplete, onBack, initialData }) {
   const [isMiniPay, setIsMiniPay] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [emailConsent, setEmailConsent] = useState(false);
-  const [showEmailWarning, setShowEmailWarning] = useState(false);
+  const [submitResults, setSubmitResults] = useState(null);
 
   const update = (k, v) => setData((d) => ({ ...d, [k]: v }));
   const toggle = (k, v) => setData((d) => ({ ...d, [k]: d[k].includes(v) ? d[k].filter((x) => x !== v) : [...d[k], v] }));
@@ -498,7 +572,6 @@ function Register({ onComplete, onBack, initialData }) {
   }, []);
 
   const handlePublish = async () => {
-    if (data.email && !emailConsent) { setShowEmailWarning(true); return; }
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -509,13 +582,18 @@ function Register({ onComplete, onBack, initialData }) {
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Erro no servidor");
-      onComplete(data);
+      setSubmitResults(result.results);
     } catch (err) {
       setSubmitError(err.message);
     } finally {
       setSubmitting(false);
     }
   };
+
+  // Mostra tela de sucesso após submit
+  if (submitResults) {
+    return <SuccessScreen data={data} results={submitResults} onViewProfile={() => onComplete(data)} />;
+  }
 
   const steps = ["Identidade", "Carteira", "Skills", "Trilhas", "Confirmar"];
   const canNext = () => {
@@ -524,25 +602,16 @@ function Register({ onComplete, onBack, initialData }) {
     return true;
   };
 
+  // Agrupa skills por tag
+  const skillGroups = SKILLS.reduce((acc, s) => {
+    if (!acc[s.tag]) acc[s.tag] = [];
+    acc[s.tag].push(s);
+    return acc;
+  }, {});
+
   return (
     <div className="screen register">
       <Scanlines />
-      {showEmailWarning && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "var(--c-bg-2)", border: "1px solid var(--c-yellow)", padding: 32, borderRadius: 4, maxWidth: 400, width: "90%", position: "relative" }}>
-            <CornerTicks color="var(--c-yellow)" />
-            <Stamp color="var(--c-yellow)" rotate={-3}>ATENÇÃO</Stamp>
-            <h3 style={{ fontFamily: "Bebas Neue", fontSize: 24, marginTop: 16, marginBottom: 12 }}>Seu email será público</h3>
-            <p style={{ fontSize: 13, color: "var(--c-muted)", marginBottom: 8 }}>Seu email ficará visível no repositório público do GitHub (Talent-Program).</p>
-            <p style={{ fontSize: 13, color: "var(--c-orange)", marginBottom: 20 }}>⚠ Use um email não sensível — evite seu email principal.</p>
-            <div style={{ display: "flex", gap: 12 }}>
-              <button className="btn btn-primary" onClick={() => { setEmailConsent(true); setShowEmailWarning(false); handlePublish(); }}>Entendi e aceito</button>
-              <button className="btn btn-ghost" onClick={() => setShowEmailWarning(false)}>Cancelar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="reg-shell">
         <button className="reg-back mono" onClick={onBack}>← VOLTAR</button>
         <div className="reg-grid">
@@ -572,13 +641,20 @@ function Register({ onComplete, onBack, initialData }) {
             {step === 0 && (
               <StepFrame title="Quem é você?" tag="01·IDENTIDADE">
                 <Field label="Nome completo" required><input value={data.name} onChange={(e) => update("name", e.target.value)} placeholder="Ex: Maria Eduarda Santos" /></Field>
-                <Field label="Bio" hint="Em uma frase: quem é você, o que tá construindo"><textarea rows={3} value={data.bio} onChange={(e) => update("bio", e.target.value)} placeholder="Estudante na E.E... comecei programando smart contracts..." /></Field>
+                <Field label="Bio" hint="Em uma frase: quem é você, o que tá construindo">
+                  <textarea rows={3} value={data.bio} onChange={(e) => update("bio", e.target.value)} placeholder="Estudante na E.E... comecei programando smart contracts..." />
+                </Field>
                 <div className="field-row">
                   <Field label="Localização" hint="Cidade, UF"><input value={data.location} onChange={(e) => update("location", e.target.value)} placeholder="Belo Horizonte, MG" /></Field>
                   <Field label="GitHub / portfólio" hint="Opcional"><input value={data.github} onChange={(e) => update("github", e.target.value)} placeholder="github.com/seu-user" /></Field>
                 </div>
-                <Field label="Email de contato" hint="Opcional — será público no repositório">
+                <Field label="Email de contato" hint="Opcional">
                   <input value={data.email} onChange={(e) => update("email", e.target.value)} placeholder="use um email não sensível" type="email" />
+                  {data.email && (
+                    <div style={{ marginTop: 6, padding: "8px 12px", background: "rgba(255,210,63,0.08)", border: "1px solid rgba(255,210,63,0.25)", borderRadius: 3, fontSize: 12, color: "var(--c-yellow)" }}>
+                      ⚠ Seu email ficará <b>público</b> no repositório GitHub. Use um email não sensível.
+                    </div>
+                  )}
                 </Field>
                 <Field label="Programa / Cohort">
                   <div className="chip-row">
@@ -619,20 +695,25 @@ function Register({ onComplete, onBack, initialData }) {
 
             {step === 2 && (
               <StepFrame title="No que você manja?" tag="03·SKILLS">
-                <p className="step-frame-lede">Marca tudo que você já tocou.</p>
-                <div className="skills-grid">
-                  {SKILLS.map((s) => {
-                    const on = data.skills.includes(s.id);
-                    return (
-                      <button key={s.id} type="button" className={`skill-chip ${on ? "on" : ""}`} onClick={() => toggle("skills", s.id)}>
-                        <span className="sc-tag mono">{s.tag}</span>
-                        <span className="sc-l">{s.label}</span>
-                        {on && <span className="sc-tick">✓</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="muted small mono" style={{ marginTop: 12 }}>↳ {data.skills.length} skill{data.skills.length !== 1 ? "s" : ""} selecionada{data.skills.length !== 1 ? "s" : ""}</div>
+                <p className="step-frame-lede">Marca tudo que você já tocou — técnico ou não.</p>
+                {Object.entries(skillGroups).map(([tag, skills]) => (
+                  <div key={tag} style={{ marginBottom: 20 }}>
+                    <div className="mono" style={{ fontSize: 10, color: "var(--c-muted)", letterSpacing: "0.12em", marginBottom: 8 }}>◤ {tag}</div>
+                    <div className="skills-grid">
+                      {skills.map((s) => {
+                        const on = data.skills.includes(s.id);
+                        return (
+                          <button key={s.id} type="button" className={`skill-chip ${on ? "on" : ""}`} onClick={() => toggle("skills", s.id)}>
+                            <span className="sc-tag mono">{s.tag}</span>
+                            <span className="sc-l">{s.label}</span>
+                            {on && <span className="sc-tick">✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <div className="muted small mono" style={{ marginTop: 8 }}>↳ {data.skills.length} skill{data.skills.length !== 1 ? "s" : ""} selecionada{data.skills.length !== 1 ? "s" : ""}</div>
               </StepFrame>
             )}
 
@@ -657,7 +738,11 @@ function Register({ onComplete, onBack, initialData }) {
 
             {step === 4 && (
               <StepFrame title="Confere e publica" tag="05·CONFIRMAR">
-                <p className="step-frame-lede">Revisa. Ao publicar, gera um commit no GitHub e emite um badge NFT na Celo Mainnet.</p>
+                <p className="step-frame-lede">Revisa seus dados. Ao publicar:</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20, padding: "12px 16px", background: "var(--c-bg-3)", borderRadius: 3 }}>
+                  <div className="mono" style={{ fontSize: 12, color: "var(--c-cyan)" }}>✓ Cria seu perfil no repositório público (GitHub)</div>
+                  <div className="mono" style={{ fontSize: 12, color: "var(--c-yellow)" }}>✓ Emite um Badge NFT Web3 101 na sua carteira (Celo Mainnet) — gas pago pelo BnE</div>
+                </div>
                 <div className="review">
                   <ReviewRow l="Nome" v={data.name || "—"} />
                   <ReviewRow l="Bio" v={data.bio || "—"} />
@@ -668,13 +753,6 @@ function Register({ onComplete, onBack, initialData }) {
                   <ReviewRow l="Programa" v={data.cohort || "—"} />
                   <ReviewRow l="Skills" v={data.skills.length ? data.skills.map((id) => SKILLS.find((s) => s.id === id)?.label).join(" · ") : "—"} />
                   <ReviewRow l="Trilhas" v={data.tracks.length ? data.tracks.join(" · ") : "—"} />
-                </div>
-                <div className="publish-card">
-                  <CornerTicks color="var(--c-yellow)" />
-                  <div className="pub-l">
-                    <Stamp color="var(--c-yellow)" rotate={-4}>PRONTO PRA ON-CHAIN</Stamp>
-                    <p>Vai gerar <code>builders/{(data.wallet || "0x000").slice(0, 12).toLowerCase()}.md</code> no repo público e emitir badge NFT na Celo Mainnet.</p>
-                  </div>
                 </div>
                 {submitError && <div style={{ marginTop: 12, color: "var(--c-blood)", fontFamily: "JetBrains Mono", fontSize: 13 }}>⚠ {submitError}</div>}
               </StepFrame>
@@ -735,8 +813,7 @@ function Profile({ profile, onBack, onEdit, isOwn }) {
   const [showInvite, setShowInvite] = useState(false);
 
   const handleShare = () => {
-    const url = `${window.location.origin}?builder=${profile.wallet}`;
-    navigator.clipboard.writeText(url).then(() => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -803,7 +880,7 @@ function Profile({ profile, onBack, onEdit, isOwn }) {
         </header>
 
         <nav className="prof-tabs mono">
-          {[{ id: "overview", l: "Overview" }, { id: "skills", l: "Skills · Validações" }, { id: "onchain", l: "Atividade on-chain" }, { id: "projects", l: "Projetos" }].map((t) => (
+          {[{ id: "overview", l: "Overview" }, { id: "skills", l: "Skills · Validações" }, { id: "onchain", l: "Atividade on-chain" }].map((t) => (
             <button key={t.id} className={`pt ${tab === t.id ? "on" : ""}`} onClick={() => setTab(t.id)}>{t.l}</button>
           ))}
         </nav>
@@ -811,7 +888,6 @@ function Profile({ profile, onBack, onEdit, isOwn }) {
         {tab === "overview" && <OverviewTab profile={profile} onInvite={() => setShowInvite(true)} />}
         {tab === "skills" && <SkillsTab profile={profile} />}
         {tab === "onchain" && <OnchainTab profile={profile} />}
-        {tab === "projects" && <ProjectsTab profile={profile} />}
       </div>
       <Footer />
     </div>
@@ -902,14 +978,6 @@ function OnchainTab({ profile }) {
   );
 }
 
-function ProjectsTab({ profile }) {
-  return (
-    <div className="projects-tab">
-      <p className="mono" style={{ color: "var(--c-muted)", fontSize: 12, textAlign: "center", padding: 40 }}>Projetos serão adicionados em breve.</p>
-    </div>
-  );
-}
-
 function Footer() {
   return (
     <footer className="ftr">
@@ -922,7 +990,7 @@ function Footer() {
         <div><h5 className="mono">REPOS</h5><ul><li>↗ github.com/BlockchainnaEscola</li><li>↗ blockchain-na-escola.gitbook.io</li></ul></div>
         <div><h5 className="mono">PARCEIROS</h5><ul><li>Celo Foundation</li><li>Team1 Avalanche</li><li>Off-Chain Brazil · Modular · Rastas</li><li>Let's Co Create · Zcash BR</li></ul></div>
       </div>
-      <div className="ftr-foot mono"><span>BNE//TALENT_HUB v0.5 · BH→SSA→SP · 2026</span><span>Built by kids da quebrada · Open source · MIT</span></div>
+      <div className="ftr-foot mono"><span>BNE//TALENT_HUB v0.6 · BH→SSA→SP · 2026</span><span>Built by kids da quebrada · Open source · MIT</span></div>
     </footer>
   );
 }
@@ -976,7 +1044,7 @@ function App() {
       .catch(() => setLoadingBuilders(false));
   }, []);
 
-  // Detecta carteira conectada e carrega perfil próprio
+  // Detecta carteira conectada
   useEffect(() => {
     if (typeof window.ethereum !== "undefined") {
       window.ethereum.request({ method: "eth_accounts" }).then(accounts => {
@@ -989,61 +1057,44 @@ function App() {
     }
   }, [builders]);
 
-  const handleComplete = (data) => {
-    if (data.wallet) setWalletAddress(data.wallet);
-    setProfile(data);
-    setSelectedBuilder(null);
-    setScreen("profile");
+  const connectWallet = async () => {
+    if (typeof window.ethereum !== "undefined") {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      if (accounts && accounts[0]) {
+        setWalletAddress(accounts[0]);
+        const own = builders.find(b => b.wallet.toLowerCase() === accounts[0].toLowerCase());
+        if (own) setProfile(own);
+      }
+    } else {
+      alert("Nenhuma carteira detectada.");
+    }
   };
 
-  const handleSelectBuilder = (b) => {
-    setSelectedBuilder(b);
-    setScreen("profile");
-  };
-
-  const handleEdit = () => {
-    setEditData(profile || selectedBuilder);
-    setScreen("register");
-  };
-
+  const hasProfile = !!(walletAddress && builders.find(b => b.wallet.toLowerCase() === walletAddress.toLowerCase()));
   const currentProfile = selectedBuilder || profile;
-  const isOwn = currentProfile && walletAddress &&
-    currentProfile.wallet.toLowerCase() === walletAddress.toLowerCase();
+  const isOwn = currentProfile && walletAddress && currentProfile.wallet.toLowerCase() === walletAddress.toLowerCase();
 
   return (
     <div className="app" data-screen-label={screen}>
-      <HUDBar screen={screen} onScreen={setScreen} walletAddress={walletAddress} />
+      <HUDBar
+        screen={screen}
+        walletAddress={walletAddress}
+        hasProfile={hasProfile}
+        onMyProfile={() => { setSelectedBuilder(null); setScreen("profile"); }}
+        onConnect={connectWallet}
+      />
 
       {screen === "landing" && (
-        <Landing
-          onRegister={() => setScreen("register")}
-          onView={() => setScreen("builders")}
-          builders={builders}
-          loadingBuilders={loadingBuilders}
-        />
+        <Landing onRegister={() => { setEditData(null); setScreen("register"); }} onViewBuilders={() => setScreen("builders")} />
       )}
       {screen === "builders" && (
-        <BuildersList
-          builders={builders}
-          loading={loadingBuilders}
-          onSelect={handleSelectBuilder}
-          onBack={() => setScreen("landing")}
-        />
+        <BuildersList builders={builders} loading={loadingBuilders} onSelect={(b) => { setSelectedBuilder(b); setScreen("profile"); }} onBack={() => setScreen("landing")} />
       )}
       {screen === "register" && (
-        <Register
-          onComplete={handleComplete}
-          onBack={() => setScreen("landing")}
-          initialData={editData}
-        />
+        <Register onComplete={(data) => { setProfile(data); setSelectedBuilder(null); setScreen("profile"); }} onBack={() => setScreen("landing")} initialData={editData} />
       )}
       {screen === "profile" && currentProfile && (
-        <Profile
-          profile={currentProfile}
-          onBack={() => { setSelectedBuilder(null); setScreen("builders"); }}
-          onEdit={handleEdit}
-          isOwn={isOwn}
-        />
+        <Profile profile={currentProfile} onBack={() => setScreen("builders")} onEdit={() => { setEditData(currentProfile); setScreen("register"); }} isOwn={isOwn} />
       )}
       {screen === "profile" && !currentProfile && (
         <div style={{ padding: 80, textAlign: "center" }}>
