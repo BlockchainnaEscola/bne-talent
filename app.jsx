@@ -262,7 +262,7 @@ function WalletMenu({ shortAddr, hasProfile, onMyProfile, onDisconnect }) {
   );
 }
 
-function HUDBar({ screen, walletAddress, hasProfile, onMyProfile, onConnect, onDisconnect }) {
+function HUDBar({ screen, walletAddress, hasProfile, onMyProfile, onConnect, onDisconnect, onHome }) {
   const [t, setT] = useState(new Date());
   useEffect(() => { const i = setInterval(() => setT(new Date()), 1000); return () => clearInterval(i); }, []);
   const time = t.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -270,7 +270,9 @@ function HUDBar({ screen, walletAddress, hasProfile, onMyProfile, onConnect, onD
   return (
     <div className="hud">
       <div className="hud-l">
-        <img src="assets/logo.png" alt="BnE" className="hud-logo" style={{ height: "100px", width: "100px" }} />
+        <button onClick={onHome} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }}>
+          <img src="assets/logo.png" alt="BnE" className="hud-logo" style={{ height: "100px", width: "100px" }} />
+        </button>
         <b>BLOCKCHAIN NA ESCOLA</b>
         <span className="hud-sep">/</span>
         <span className="hud-chip">TALENT&nbsp;PROGRAM</span>
@@ -911,7 +913,7 @@ function Profile({ profile, onBack, onEdit, isOwn }) {
         </nav>
 
         {tab === "overview" && <OverviewTab profile={profile} onInvite={() => setShowInvite(true)} />}
-        {tab === "passport" && <PassportTab profile={profile} isOwn={isOwn} />}
+        {tab === "passport" && <PassportTab profile={profile} isOwn={isOwn} walletAddress={walletAddress} />}
         {tab === "skills" && <SkillsTab profile={profile} />}
         {tab === "onchain" && <OnchainTab profile={profile} />}
       </div>
@@ -921,20 +923,53 @@ function Profile({ profile, onBack, onEdit, isOwn }) {
 }
 
 const PASSPORT_BADGES = [
-  { id: 0, label: "Perfil Criado",      icon: "◈", desc: "Cadastrou no BnE Talent Hub",          color: "var(--c-orange)",  check: (p) => !!p.name },
-  { id: 1, label: "GitHub Conectado",   icon: "⌥", desc: "Adicionou GitHub ao perfil",           color: "var(--c-cyan)",    check: (p) => !!p.github },
-  { id: 2, label: "Twitter Conectado",  icon: "◎", desc: "Adicionou Twitter ao perfil",          color: "var(--c-magenta)", check: (p) => !!p.twitter },
-  { id: 3, label: "Skills Declaradas",  icon: "◐", desc: "Declarou pelo menos 1 skill",          color: "var(--c-yellow)",  check: (p) => p.skills?.length > 0 },
-  { id: 4, label: "Trilha Concluída",   icon: "▲", desc: "Completou pelo menos 1 trilha",        color: "var(--c-orange)",  check: (p) => p.tracks?.length > 0 },
-  { id: 5, label: "MiniPay Ativo",      icon: "⬡", desc: "Acessou via MiniPay wallet",           color: "var(--c-cyan)",    check: (p) => !!p.isMiniPay },
-  { id: 6, label: "Primeiro Token",     icon: "◆", desc: "Fez deploy de token na Celo",          color: "var(--c-magenta)", check: () => false },
-  { id: 7, label: "Primeiro NFT",       icon: "✦", desc: "Fez deploy de NFT na Celo",            color: "var(--c-yellow)",  check: () => false },
-  { id: 8, label: "Balaio Task",        icon: "⊕", desc: "Completou uma task no Balaio",         color: "var(--c-orange)",  check: () => false },
-  { id: 9, label: "Proof of Ship",      icon: "⛵", desc: "Submeteu projeto na competição Celo",  color: "var(--c-cyan)",    check: () => false },
+  { id: 0,  label: "Perfil Criado",       icon: "◈", desc: "Cadastrou no BnE Talent Hub",         color: "var(--c-orange)",  check: (p) => !!p.name },
+  { id: 1,  label: "GitHub Conectado",    icon: "⌥", desc: "Adicionou GitHub ao perfil",          color: "var(--c-cyan)",    check: (p) => !!p.github },
+  { id: 2,  label: "Twitter Conectado",   icon: "◎", desc: "Adicionou Twitter ao perfil",         color: "var(--c-magenta)", check: (p) => !!p.twitter },
+  { id: 3,  label: "Skills Declaradas",   icon: "◐", desc: "Declarou pelo menos 1 skill",         color: "var(--c-yellow)",  check: (p) => p.skills?.length > 0 },
+  { id: 4,  label: "Trilha Concluída",    icon: "▲", desc: "Completou pelo menos 1 trilha",       color: "var(--c-orange)",  check: (p) => p.tracks?.length > 0 },
+  { id: 5,  label: "MiniPay Ativo",       icon: "⬡", desc: "Acessou via MiniPay wallet",          color: "var(--c-cyan)",    check: (p) => !!p.isMiniPay },
+  { id: 6,  label: "Primeiro Token",      icon: "◆", desc: "Fez deploy de token na Celo",         color: "var(--c-magenta)", check: () => false },
+  { id: 7,  label: "Primeiro NFT",        icon: "✦", desc: "Fez deploy de NFT na Celo",           color: "var(--c-yellow)",  check: () => false },
+  { id: 8,  label: "Balaio Task",         icon: "⊕", desc: "Completou uma task aprovada no Balaio", color: "var(--c-orange)", check: () => false },
+  { id: 9,  label: "Proof of Ship",       icon: "⛵", desc: "Submeteu projeto na competição Celo", color: "var(--c-cyan)",    check: () => false },
+  { id: 10, label: "BnE Bootcamp",        icon: "🎓", desc: "Participou de bootcamp presencial BnE", color: "var(--c-magenta)", check: () => false },
 ];
 
-function PassportTab({ profile, isOwn }) {
+function PassportTab({ profile, isOwn, walletAddress }) {
+  const [minting, setMinting]   = React.useState({});
+  const [minted, setMinted]     = React.useState({});
+  const [errors, setErrors]     = React.useState({});
+
+  const handleMint = async (badgeId) => {
+    setMinting(m => ({ ...m, [badgeId]: true }));
+    setErrors(e => ({ ...e, [badgeId]: null }));
+    try {
+      const res = await fetch("/api/issue-badge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet:    profile.wallet,
+          badgeType: badgeId,
+          name:      profile.name,
+          location:  profile.location || "",
+          github:    profile.github   || "",
+          twitter:   profile.twitter  || "",
+          cohort:    profile.cohort   || "",
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao mintar");
+      setMinted(m => ({ ...m, [badgeId]: data.txHash }));
+    } catch (err) {
+      setErrors(e => ({ ...e, [badgeId]: err.message }));
+    } finally {
+      setMinting(m => ({ ...m, [badgeId]: false }));
+    }
+  };
+
   const unlocked = PASSPORT_BADGES.filter(b => b.check(profile)).length;
+
   return (
     <div style={{ padding: "32px 0" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 24 }}>
@@ -943,28 +978,65 @@ function PassportTab({ profile, isOwn }) {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
         {PASSPORT_BADGES.map(b => {
-          const done = b.check(profile);
+          const eligible  = b.check(profile);
+          const isMinted  = !!minted[b.id];
+          const isMinting = !!minting[b.id];
+          const txHash    = minted[b.id];
+          const error     = errors[b.id];
+
           return (
             <div key={b.id} style={{
-              position: "relative", border: `1px solid ${done ? b.color : "var(--c-bg-3)"}`,
-              borderRadius: 4, padding: "20px 16px", background: done ? `color-mix(in srgb, ${b.color} 8%, var(--c-bg-2))` : "var(--c-bg-2)",
-              opacity: done ? 1 : 0.5, transition: "opacity 0.2s"
+              position: "relative", border: `1px solid ${eligible ? b.color : "var(--c-bg-3)"}`,
+              borderRadius: 4, padding: "20px 16px", display: "flex", flexDirection: "column",
+              background: eligible ? `color-mix(in srgb, ${b.color} 8%, var(--c-bg-2))` : "var(--c-bg-2)",
+              opacity: eligible ? 1 : 0.45, transition: "opacity 0.2s"
             }}>
-              <CornerTicks color={done ? b.color : "var(--c-bg-3)"} />
-              <div style={{ fontSize: 28, color: done ? b.color : "var(--c-muted)", marginBottom: 8, filter: done ? "none" : "grayscale(1)" }}>
+              <CornerTicks color={eligible ? b.color : "var(--c-bg-3)"} />
+              <div style={{ fontSize: 28, color: eligible ? b.color : "var(--c-muted)", marginBottom: 8 }}>
                 {b.icon}
               </div>
-              <div style={{ fontFamily: "Bebas Neue", fontSize: 18, letterSpacing: "0.04em", color: done ? "var(--c-fg)" : "var(--c-muted)", marginBottom: 4 }}>
+              <div style={{ fontFamily: "Bebas Neue", fontSize: 18, letterSpacing: "0.04em", color: eligible ? "var(--c-fg)" : "var(--c-muted)", marginBottom: 4 }}>
                 {b.label}
               </div>
-              <div className="mono" style={{ fontSize: 10, color: "var(--c-muted)", lineHeight: 1.4 }}>
+              <div className="mono" style={{ fontSize: 10, color: "var(--c-muted)", lineHeight: 1.4, flexGrow: 1 }}>
                 {b.desc}
               </div>
-              {done && (
-                <div className="mono" style={{ marginTop: 10, fontSize: 10, color: b.color }}>✓ DESBLOQUEADO</div>
+
+              {/* estado: já mintado nesta sessão */}
+              {isMinted && (
+                <div style={{ marginTop: 10 }}>
+                  <div className="mono" style={{ fontSize: 10, color: b.color }}>✓ MINTADO</div>
+                  <a href={`https://celoscan.io/tx/${txHash}`} target="_blank" rel="noreferrer"
+                    className="mono" style={{ fontSize: 10, color: "var(--c-muted)", wordBreak: "break-all" }}>
+                    {txHash.slice(0, 12)}...↗
+                  </a>
+                </div>
               )}
-              {!done && isOwn && (
+
+              {/* botão MINT — só aparece pro dono, badge elegível, ainda não mintado */}
+              {isOwn && eligible && !isMinted && (
+                <button
+                  onClick={() => handleMint(b.id)}
+                  disabled={isMinting}
+                  style={{
+                    marginTop: 12, background: isMinting ? "transparent" : b.color,
+                    border: `1px solid ${b.color}`, borderRadius: 3,
+                    padding: "6px 10px", color: isMinting ? b.color : "#000",
+                    fontFamily: "JetBrains Mono", fontSize: 11, fontWeight: 700,
+                    cursor: isMinting ? "not-allowed" : "pointer", letterSpacing: "0.05em"
+                  }}>
+                  {isMinting ? "MINTANDO…" : "⬡ MINT"}
+                </button>
+              )}
+
+              {/* badge bloqueado */}
+              {!eligible && isOwn && (
                 <div className="mono" style={{ marginTop: 10, fontSize: 10, color: "var(--c-muted)" }}>◌ BLOQUEADO</div>
+              )}
+
+              {/* erro */}
+              {error && (
+                <div className="mono" style={{ marginTop: 6, fontSize: 10, color: "var(--c-blood)" }}>⚠ {error}</div>
               )}
             </div>
           );
@@ -972,7 +1044,7 @@ function PassportTab({ profile, isOwn }) {
       </div>
       {isOwn && (
         <p className="mono" style={{ marginTop: 24, fontSize: 11, color: "var(--c-muted)", textAlign: "center" }}>
-          Complete seu perfil para desbloquear mais badges · Emissão onchain em breve
+          Complete seu perfil para desbloquear mais badges · Gas pago pelo BnE
         </p>
       )}
     </div>
@@ -1173,6 +1245,7 @@ function App() {
         onMyProfile={() => { setSelectedBuilder(null); setScreen("profile"); }}
         onConnect={connectWallet}
         onDisconnect={disconnectWallet}
+        onHome={() => setScreen("landing")}
       />
 
       {screen === "landing" && (
