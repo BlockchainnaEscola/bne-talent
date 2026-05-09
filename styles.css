@@ -398,6 +398,7 @@ code { font-family: "JetBrains Mono", monospace; background: var(--c-bg-3); padd
   padding: 14px 0; overflow: hidden;
   border-top: 2px solid var(--c-fg); border-bottom: 2px solid var(--c-fg);
 }
+.mq-track { animation-duration: 20s !important; }
 .mq-track {
   display: flex; gap: 32px;
   font-family: "Bebas Neue", sans-serif;
@@ -1136,8 +1137,9 @@ code { font-family: "JetBrains Mono", monospace; background: var(--c-bg-3); padd
   .hud-r { font-size: 10px; gap: 6px; }
   .hud-r .hud-sep { display: none; }
 
-  /* PORTRAIT TAGS — ocultar no mobile */
+  /* PORTRAIT TAGS e PORTRAIT — ocultar no mobile */
   .portrait-tag { display: none; }
+  .hero-portrait { display: none; }
 
   /* EYEBROW no hero — simplificar */
   .hero-title-col .eyebrow { display: none; }
