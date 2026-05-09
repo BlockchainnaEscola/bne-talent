@@ -291,8 +291,6 @@ function InviteModal({ profile, onClose }) {
 
 function SuccessScreen({ data, results, onViewProfile }) {
   const githubUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/blob/main/builders/${data.wallet.toLowerCase()}.md`;
-  const badgeTx = results?.badge?.txHash;
-  const celoscanUrl = badgeTx ? `https://celoscan.io/tx/${badgeTx}` : null;
   return (
     <div className="screen landing" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 36px)" }}>
       <Scanlines />
@@ -300,24 +298,14 @@ function SuccessScreen({ data, results, onViewProfile }) {
         <CornerTicks color="var(--c-cyan)" />
         <div style={{ fontFamily: "Bebas Neue", fontSize: 64, color: "var(--c-cyan)", lineHeight: 1 }}>✓</div>
         <h2 style={{ fontFamily: "Bebas Neue", fontSize: 40, letterSpacing: "0.04em", margin: "16px 0 8px" }}>PERFIL PUBLICADO!</h2>
-        <p style={{ color: "var(--c-muted)", marginBottom: 32 }}>Seu perfil está no ar e seu badge foi emitido na Celo Mainnet.</p>
+        <p style={{ color: "var(--c-muted)", marginBottom: 32 }}>Seu perfil está no ar. Em breve você poderá emitir seu badge onchain.</p>
 
         <div style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
           <div style={{ background: "var(--c-bg-3)", border: "1px solid var(--c-bg-3)", borderRadius: 3, padding: "12px 16px" }}>
-            <div className="mono" style={{ fontSize: 10, color: "var(--c-muted)", marginBottom: 4 }}>✓ COMMIT GITHUB</div>
+            <div className="mono" style={{ fontSize: 10, color: "var(--c-muted)", marginBottom: 4 }}>✓ PERFIL SALVO · BLOCKCHAIN NA ESCOLA</div>
             <a href={githubUrl} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 12, color: "var(--c-cyan)", wordBreak: "break-all" }}>
               builders/{data.wallet.toLowerCase()}.md ↗
             </a>
-          </div>
-          <div style={{ background: "var(--c-bg-3)", border: "1px solid var(--c-bg-3)", borderRadius: 3, padding: "12px 16px" }}>
-            <div className="mono" style={{ fontSize: 10, color: "var(--c-muted)", marginBottom: 4 }}>✓ BADGE NFT · WEB3 101 · CELO MAINNET</div>
-            {celoscanUrl ? (
-              <a href={celoscanUrl} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 12, color: "var(--c-yellow)", wordBreak: "break-all" }}>
-                {badgeTx.slice(0, 20)}...{badgeTx.slice(-8)} ↗
-              </a>
-            ) : (
-              <span className="mono" style={{ fontSize: 12, color: "var(--c-muted)" }}>Badge pendente — será emitido em breve</span>
-            )}
           </div>
         </div>
 
