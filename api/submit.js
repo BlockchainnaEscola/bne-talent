@@ -1,7 +1,5 @@
 // api/submit.js — Vercel Serverless Function
-// GitHub commit + registerBuilder + issueBadge (Celo Mainnet)
-
-import { ethers } from "ethers";
+// GitHub commit apenas — onchain fica no fluxo de badge separado
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -17,11 +15,8 @@ export default async function handler(req, res) {
   const GITHUB_TOKEN      = process.env.GITHUB_TOKEN;
   const GITHUB_OWNER      = process.env.GITHUB_OWNER || "BlockchainnaEscola";
   const GITHUB_REPO       = process.env.GITHUB_REPO  || "Talent-Program";
-  const ADMIN_PRIVATE_KEY = process.env.ADMIN_PRIVATE_KEY;
-  const CONTRACT_ADDRESS  = "0x5fFa930E5a068Ae68c9e3f0fB80dEB8eb88B058D";
-  const RPC_URL           = "https://forno.celo.org";
 
-  const results = { github: null, register: null, badge: null };
+  const results = { github: null };
 
   // ── 1. COMMIT NO TALENT-PROGRAM ──────────────────────────────────────────
   try {
@@ -86,41 +81,6 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error("GitHub commit error:", err);
     results.github = { error: err.message };
-  }
-
-  // ── 2. CONTRATO — registerBuilder + issueBadge ───────────────────────────
-  try {
-    if (!ADMIN_PRIVATE_KEY) throw new Error("ADMIN_PRIVATE_KEY not set");
-
-    const ABI = [
-      "function registerBuilder(string calldata name, string calldata location, string calldata github, string calldata cohort) external",
-      "function issueBadge(address builder, uint8 badgeType, string calldata note) external",
-      "function hasBadge(address builder, uint8 badgeType) view returns (bool)"
-    ];
-
-    const provider = new ethers.JsonRpcProvider(RPC_URL);
-    const adminWallet = new ethers.Wallet(ADMIN_PRIVATE_KEY, provider);
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, adminWallet);
-
-    // registerBuilder — qualquer um pode chamar, admin paga o gas
-    const txReg = await contract.registerBuilder(
-      name,
-      location || "",
-      github || "",
-      cohort || ""
-    );
-    await txReg.wait();
-    results.register = { ok: true, txHash: txReg.hash };
-
-    // issueBadge — badge tipo 0 = Web3 101
-    const note = `BnE Talent Hub · ${cohort || "Web3 101"} · ${new Date().toISOString().split("T")[0]}`;
-    const txBadge = await contract.issueBadge(wallet, 0, note);
-    await txBadge.wait();
-    results.badge = { ok: true, txHash: txBadge.hash };
-
-  } catch (err) {
-    console.error("Contract error:", err.message);
-    results.badge = { error: err.message };
   }
 
   return res.status(200).json({ ok: true, results });
